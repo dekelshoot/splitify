@@ -19,6 +19,11 @@ SEPARATED_URL = '/separated/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SEPARATED_ROOT = os.path.join(BASE_DIR, 'separated')
 
+# settings.py
+STATIC_URL = '/web/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
