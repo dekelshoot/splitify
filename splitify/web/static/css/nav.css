@@ -1,0 +1,12 @@
+header {
+    color: white;
+}
+
+.nav-link,
+a {
+    color: white;
+}
+
+.nav-link:hover {
+    color: rgb(141, 141, 141);
+}
