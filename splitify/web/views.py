@@ -69,7 +69,7 @@ class ProcessingView(TemplateView):
     def execute_demucs(self,file):
         # Exécution du code Demucs en tâche de fond
         subprocess.run(['python3', '-m', 'demucs',
-            '--mp3', '--two-stems=vocals', file])
+            '--mp3', '--two-stems=vocals', file, '-o', 'media'])
         self.processing_complete = True
         
             
@@ -87,7 +87,7 @@ class ResultView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         audios={}
-        source_path = settings.SEPARATED_ROOT+"/htdemucs/input"
+        source_path = settings.MEDIA_ROOT+"/htdemucs/input"
         if os.path.exists(source_path):
             files_names = [f for f in os.listdir(source_path) if f.endswith('.mp3')]
             for f in files_names:
