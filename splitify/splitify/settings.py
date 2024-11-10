@@ -33,7 +33,7 @@ SECRET_KEY = 'django-insecure-=-r(*79kl%+ec=_#jp81f_hy#92eo_&rzt@*ii6rq*w@p2e0ie
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['splitify-0oi9.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['splitify-0oi9.onrender.com', 'localhost', '127.0.0.1', 'localhost:8000']
 
 
 # Application definition
