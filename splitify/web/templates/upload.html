@@ -12,6 +12,7 @@
       href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" />
 
     <link rel="stylesheet" href="{% static 'css/upload.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
 
     <title>Splitify</title>
     <link
@@ -118,6 +119,24 @@
                 id="file-upload"
                 style="display: none"
                 accept=".mp3" />
+
+            </div>
+            <hr>
+            <br>
+            <p
+              class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
+              Télécharger depuis YouTube.
+            </p>
+            <div class="flex justify-center">
+              
+              <!-- Formulaire pour le lien YouTube -->
+    <form method="post" class="form2 items-center justify-center">
+      {% csrf_token %}
+      <div class="mb-3">
+        {{ youtube_form.url }}
+      </div>
+      <button type="submit"  class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-[#3b19e6] text-white text-sm font-bold leading-normal tracking-[0.015em] w-full select-files">Valider</button>
+  </form> </div>
             </div>
             <!-- Barre de progression -->
             <div class="progress-container" id="progressContainer">

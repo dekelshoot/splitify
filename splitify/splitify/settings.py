@@ -24,6 +24,8 @@ STATIC_URL = '/web/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
+COOKIES_FILE = os.path.join(BASE_DIR, 'config', 'cookies.txt')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 

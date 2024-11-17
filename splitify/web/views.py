@@ -7,51 +7,147 @@ from django.urls import reverse_lazy
 from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
 from .models import ProcessedResult  # Vous pouvez définir ce modèle pour enregistrer les résultats traités
-from .forms import FormulaireTelechargement
 import os
+from django.contrib import messages
+import yt_dlp
+from urllib.error import HTTPError
 import shutil
 from django.http import HttpResponse, FileResponse
 import subprocess
 import threading
 from django.views import View
+from django.urls import reverse_lazy
+from pytube import YouTube
+from .forms import FormulaireTelechargement, FormulaireYouTube
 # Page d'accueil
 class HomeView(TemplateView):
     template_name = 'home.html'
 
 # Page de téléchargement
-class UploadView(FormView):
-    template_name = 'upload.html'
-    form_class = FormulaireTelechargement
-    success_url = reverse_lazy('process')  # Redirige vers la page de traitement après l'upload
+# class UploadView(FormView):
+#     template_name = 'upload.html'
+#     form_class = FormulaireTelechargement
+#     success_url = reverse_lazy('process')  # Redirige vers la page de traitement après l'upload
 
-    def post(self, request, *args, **kwargs):
-        form = FormulaireTelechargement(request.POST, request.FILES)
-        if form.is_valid():
-            fichier = request.FILES['fichier']
-            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+#     def post(self, request, *args, **kwargs):
+#         form = FormulaireTelechargement(request.POST, request.FILES)
+#         if form.is_valid():
+#             fichier = request.FILES['fichier']
+#             fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 
-            # Définir le nouveau nom de fichier
-            extension = fichier.name.split('.')[-1]  # Récupère l'extension du fichier original
-            nouveau_nom = f"input.{extension}"       # Renomme le fichier en "input.<extension>"
-            chemin_complet = os.path.join(settings.MEDIA_ROOT, nouveau_nom)
+#             # Définir le nouveau nom de fichier
+#             extension = fichier.name.split('.')[-1]  # Récupère l'extension du fichier original
+#             nouveau_nom = f"input.{extension}"       # Renomme le fichier en "input.<extension>"
+#             chemin_complet = os.path.join(settings.MEDIA_ROOT, nouveau_nom)
 
-            # Supprimer le fichier existant s'il y en a un avec le même nom
-            if os.path.exists(chemin_complet):
-                os.remove(chemin_complet)
+#             # Supprimer le fichier existant s'il y en a un avec le même nom
+#             if os.path.exists(chemin_complet):
+#                 os.remove(chemin_complet)
 
-            # Sauvegarder le fichier avec le nouveau nom
-            nom_fichier = fs.save(nouveau_nom, fichier)
-            url_fichier = fs.url(nom_fichier)
-            return redirect('process')
+#             # Sauvegarder le fichier avec le nouveau nom
+#             nom_fichier = fs.save(nouveau_nom, fichier)
+#             url_fichier = fs.url(nom_fichier)
+#             return redirect('process')
         
     
         
-    def form_valid(self, form):
-        # Sauvegarder le fichier téléchargé et l'envoyer pour traitement
-        file = form.cleaned_data['file']
-        # Traitement du fichier, enregistrez-le ou effectuez une action spécifique
-        return super().form_valid(form)
+#     def form_valid(self, form):
+#         # Sauvegarder le fichier téléchargé et l'envoyer pour traitement
+#         file = form.cleaned_data['file']
+#         # Traitement du fichier, enregistrez-le ou effectuez une action spécifique
+#         return super().form_valid(form)
 
+
+class UploadView(FormView):
+    template_name = 'upload.html'
+    form_class = FormulaireTelechargement  # Utilisez un formulaire initial
+    success_url = reverse_lazy('process')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['youtube_form'] = FormulaireYouTube()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        audio_form = FormulaireTelechargement(request.POST, request.FILES)
+        youtube_form = FormulaireYouTube(request.POST)
+
+        # Traitement si un fichier audio est envoyé
+        if audio_form.is_valid() and 'fichier' in request.FILES:
+            fichier = request.FILES['fichier']
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+
+            # Définir le nom de fichier
+            extension = fichier.name.split('.')[-1]
+            nouveau_nom = f"input.{extension}"
+            chemin_complet = os.path.join(settings.MEDIA_ROOT, nouveau_nom)
+
+            # Supprimer le fichier existant
+            if os.path.exists(chemin_complet):
+                os.remove(chemin_complet)
+
+            # Sauvegarder le fichier
+            fs.save(nouveau_nom, fichier)
+            return redirect('process')
+
+        # Traitement si un lien YouTube est envoyé
+        elif youtube_form.is_valid() and youtube_form.cleaned_data['url']:
+
+            yt_url = youtube_form.cleaned_data['url']
+        
+            # Validation de l'URL
+            if not yt_url.startswith("https://www.youtube.com/") and not yt_url.startswith("https://youtu.be/"):
+                messages.error(request, "URL non valide. Fournissez une URL YouTube valide.")
+                return redirect('upload')
+
+            try:
+                # Télécharger l'audio avec yt-dlp
+                info = download_audio_with_ytdlp(yt_url)
+
+                # Indiquer que le téléchargement a réussi
+                messages.success(request, f"L'audio de {info['title']} a été téléchargé avec succès.")
+                return redirect('process')
+
+            except yt_dlp.utils.DownloadError as e:
+                messages.error(request, f"Erreur lors du téléchargement : {str(e)}")
+            except Exception as e:
+                messages.error(request, f"Une erreur est survenue : {str(e)}")
+
+
+            # try:
+            #     yt_url = youtube_form.cleaned_data['url'].split('?')[0]  # Nettoyer l'URL
+            #     yt = YouTube(yt_url)
+            #     entry = YouTube(yt_url).title
+            #     print(f"\nVideo found: {entry}\n")
+            #     audio_download = yt.streams.get_audio_only()
+                
+            #     print(f"Downloading Video...")
+            #     # video = yt.streams.filter(only_audio=True).first()
+                
+            #     print("bon")
+            #     if not audio_download:
+            #         raise ValueError("Aucun flux audio disponible pour cette vidéo.")
+
+            #     destination = settings.MEDIA_ROOT
+            #     # out_file = video.download(output_path=destination)
+            #     out_file = audio_download.download(filename="input.mp3")
+            #     base, ext = os.path.splitext(out_file)
+            #     new_file = os.path.join(destination, 'input.mp3')
+            #     os.rename(out_file, new_file)
+            #     return redirect('process')
+
+            # except HTTPError as e:
+            #     print(f"Erreur HTTP avec YouTube : {e}")
+            #     messages.error(request, "Impossible de se connecter à YouTube. Vérifiez l'URL.")
+
+            # except Exception as e:
+            #     print(f"Erreur inattendue : {e}")
+            #     messages.error(request, "Une erreur est survenue lors du téléchargement de la vidéo.")
+
+            # return redirect('upload')
+
+        return self.form_invalid(audio_form)
+        
 # Page de traitement
 class ProcessingView(TemplateView):
     template_name = 'processing.html'
@@ -142,3 +238,30 @@ def download_file(request, filename):
     else:
         return HttpResponse("Le fichier demandé n'existe pas.", status=404)
 
+
+
+def download_audio_with_ytdlp(url):
+    """
+    Télécharge l'audio de la vidéo YouTube en utilisant yt-dlp avec cookies.
+    """
+    destination = settings.MEDIA_ROOT  # Dossier où stocker le fichier téléchargé
+    output_template = os.path.join(destination, 'input.%(ext)s')
+    cookies_path = os.path.join(settings.BASE_DIR, 'config', 'cookies.txt')  # Chemin des cookies
+
+    # Configuration yt-dlp
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': output_template,  # Nom du fichier de sortie
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'cookiefile': cookies_path,  # Charger les cookies pour l'authentification
+        'quiet': False,  # Afficher les logs pour déboguer
+        'noplaylist': True,  # Ne pas télécharger de playlists
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)  # Téléchargement
+        return info  # Retourne les informations de la vidéo

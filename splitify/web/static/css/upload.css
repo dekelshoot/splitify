@@ -29,3 +29,37 @@
     font-weight: 900;
     border-radius: 5px;
 }
+
+.form2{
+    background-color: black;
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+.form-control {
+    background-color: black;
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+/* Ajouter des styles de survol */
+.form-control:hover {
+    border-color: #007bff;
+}
+
+/* Ajouter des styles pour le champ en cours de saisie */
+.form-control:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
